@@ -89,14 +89,13 @@ DNODE *p = malloc(sizeof(DNODE));
 /* TODO */
 void deq_push_back(DEQ *l, ElemType val) {
   DNODE *p = malloc(sizeof(DNODE));
-  DNODE * back = l->back;
   p->val = val;
   p->next = NULL;
-  p->prev = back;
+  p->prev = l->back;
   if (l->front == NULL) {
     l->front = p;
   } else {
-    back->next = p;
+    l->back->next = p;
   }
   l->back = p;
 }
