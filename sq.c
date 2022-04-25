@@ -3,7 +3,7 @@
 
 #include "sq.h"
 
-#define INITCAP 32
+#define INITCAP 1000000
 
 typedef int ElemType;
 #define FORMAT " %i "
@@ -89,21 +89,16 @@ DNODE *p = malloc(sizeof(DNODE));
 /* TODO */
 void deq_push_back(DEQ *l, ElemType val) {
   DNODE *p = malloc(sizeof(DNODE));
-
+  DNODE * back = l->back;
   p->val = val;
   p->next = NULL;
-  p->prev = l->back;
-  l->back = p;
+  p->prev = back;
   if (l->front == NULL) {
     l->front = p;
   } else {
-    DNODE* temp = l->front;
-    while (temp->next != NULL) {
-      temp = temp->next;
-    }
-    temp->next = p;
-    p->prev = temp;
+    back->next = p;
   }
+  l->back = p;
 }
 
 /* TODO */

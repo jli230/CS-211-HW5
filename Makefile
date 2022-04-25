@@ -19,5 +19,8 @@ sq.o: llist_sq.o sq.h sq.c
 fdriver: driver.c sq.o 
 	gcc driver.c sq.o -lc -o driver
 
+test: test.c sq.o 
+	gcc test.c sq.o -lc -o test
+
 clean:
 	rm -f *.o driver
