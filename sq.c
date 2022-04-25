@@ -439,6 +439,8 @@ int sq_take_bribe(SQ *q, int buzzer) {
       next->prev = prev;
     } else if (next == NULL && prev == NULL) {
       return 1;
+    } else if (next == NULL) {
+      deq_pop_back(q->the_queue, buzzer);
     }
     q->buzzer_id2pointer_map[buzzer] = NULL;
     deq_push_front(q->the_queue, buzzer);
