@@ -382,6 +382,7 @@ int buzzer;
 	  return -1;
 	else{
 	  deq_pop_front(q->the_queue, &buzzer);
+    q->buzzer_id2pointer_map[buzzer] = NULL;
 	  deq_push_front(q->buzzer_bucket, buzzer);
     q->queue_length--;
 	  return buzzer;
@@ -409,13 +410,17 @@ int sq_kick_out(SQ *q, int buzzer) {
     if (q->the_queue->front == p) {
       deq_pop_front(q->the_queue, &buzzer);
       return 1;
+    } else if (q->the_queue->back == p) {
+      deq_pop_back(q->the_queue, &buzzer);
+      return 1;
     }
     prev->next = next;
     next->prev = prev;
     return 1;
   }
-  else
+  else {
     return 0;
+  }
 }
 
 /**
