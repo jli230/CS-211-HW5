@@ -347,10 +347,6 @@ int  sq_give_buzzer(SQ *q) {
         Thus, the smallest available new buzzer 
         is N
         */
-    buzzer = sq_length(q);
-    deq_push_back(q->the_queue, buzzer);
-    q->buzzer_id2pointer_map[buzzer] = q->the_queue->back;
-    q->queue_length++;
     q->total++;
     if (q->total > q->capacity-1) {
       DNODE ** new_items;
@@ -364,6 +360,10 @@ int  sq_give_buzzer(SQ *q) {
       free(q->buzzer_id2pointer_map);
       q->buzzer_id2pointer_map= new_items;
     }
+    buzzer = sq_length(q);
+    deq_push_back(q->the_queue, buzzer);
+    q->buzzer_id2pointer_map[buzzer] = q->the_queue->back;
+    q->queue_length++;
     return buzzer;
   }
 }
@@ -399,15 +399,19 @@ int buzzer;
 * ACHIEVED RUNTIME:  ???
 */
 int sq_kick_out(SQ *q, int buzzer) {
-
-  if(q->buzzer_id2pointer_map[buzzer] != NULL) {
-    DNODE * prev = q->buzzer_id2pointer_map[buzzer]->prev;
-    DNODE * next = q->buzzer_id2pointer_map[buzzer]->next;
-    prev->next = next;
-    next->prev = prev;
+  DNODE * p = q->buzzer_id2pointer_map[buzzer];
+  if(p != NULL) {
+    DNODE * prev = p->prev;
+    DNODE * next = p->next;
     q->buzzer_id2pointer_map[buzzer] = NULL;
     q->queue_length--;
     deq_push_front(q->buzzer_bucket, buzzer);
+    if (q->the_queue->front == p) {
+      deq_pop_front(q->the_queue, &buzzer);
+      return 1;
+    }
+    prev->next = next;
+    next->prev = prev;
     return 1;
   }
   else
@@ -422,14 +426,23 @@ int sq_kick_out(SQ *q, int buzzer) {
 * ACHIEVED RUNTIME:  ???
 */
 int sq_take_bribe(SQ *q, int buzzer) {
-
+  DNODE * p = q->buzzer_id2pointer_map[buzzer];
   /* remove buzzer then push it on front */
-  if(q->buzzer_id2pointer_map[buzzer] != NULL) {
-    DNODE * prev = q->buzzer_id2pointer_map[buzzer]->prev;
-    DNODE * next = q->buzzer_id2pointer_map[buzzer]->next;
-    prev->next = next;
-    next->prev = prev;
+  if(p != NULL) {
+    DNODE * prev = p->prev;
+    DNODE * next = p->next;
+    if (p == q->the_queue->front) {
+      return 1;
+    }
+    if (next != NULL && prev != NULL) {
+      prev->next = next;
+      next->prev = prev;
+    } else if (next == NULL && prev == NULL) {
+      return 1;
+    }
+    q->buzzer_id2pointer_map[buzzer] = NULL;
     deq_push_front(q->the_queue, buzzer);
+    q->buzzer_id2pointer_map[buzzer] = q->the_queue->front;
     return 1;
   }
   else {
