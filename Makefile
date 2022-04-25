@@ -7,8 +7,8 @@ llist.o:  list.h llist.c
 sq_slow.o: llist.o sq.h sq_slow.c
 	gcc -c sq_slow.c
 
-driver: driver.c sq_slow.o 
-	gcc driver.c sq_slow.o llist.o -lc -o driver
+#driver: driver.c sq_slow.o 
+#	gcc driver.c sq_slow.o llist.o -lc -o driver
 
 llist_fast.o: list.h llist_sq.c
 	gcc -c llist_sq.c
