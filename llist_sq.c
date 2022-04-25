@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "list.h"
 
+
 /**
 * See list.h for expected behavior of functions
 **/
@@ -9,6 +10,7 @@
 typedef struct node {
     ElemType val;
     struct node *next;
+    struct node *prev;
 } NODE;
 
 
@@ -331,20 +333,22 @@ NODE *tmp;
 
   if(l->front == NULL) return 0;
   if(l->front->val == x) {
-	lst_pop_front(l);
-	return 1;
+    lst_pop_front(l);
+    l->list_length--;
+    return 1;
   }
   // lst non-empty; no match on 1st elem
   p = l->front;
 
   while(p->next != NULL) {
-     if(x == p->next->val) {
-	tmp = p->next;
-	p->next = tmp->next;
-	if(tmp == l->back) 
-	    l->back = p;
-	free(tmp);
-	return 1;
+    if(x == p->next->val) {
+      tmp = p->next;
+      p->next = tmp->next;
+      if(tmp == l->back) 
+        l->back = p;
+      free(tmp);
+      l->list_length--;
+      return 1;
      }
      p = p->next;
   }

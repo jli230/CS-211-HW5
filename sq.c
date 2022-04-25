@@ -1,7 +1,224 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "list.h"
+
 #include "sq.h"
+
+#define INITCAP 32
+
+typedef int ElemType;
+#define FORMAT " %i "
+
+
+//from deq.c
+
+typedef struct dnode {
+    ElemType val;
+    struct dnode *next;
+    struct dnode *prev;
+} DNODE;
+
+
+typedef struct deq_struct {
+    DNODE *front;
+    DNODE *back;
+} DEQ;
+
+
+/*
+* returns pointer to newly created empty list
+*/
+DEQ *deq_create() {
+DEQ *q = malloc(sizeof(DEQ));
+
+  q->front = NULL;
+  q->back = NULL;
+  return q;
+}
+
+void deq_free(DEQ *q) {
+DNODE *p = q->front;
+DNODE *pnext;
+
+  while(p != NULL) {
+    pnext = p->next;   // keeps us from de-referencing a freed ptr
+    free(p);
+    p = pnext;
+  }
+  // now free the DEQ 
+  free(q);
+}
+
+void deq_print(DEQ *q) {
+DNODE *p = q->front;
+
+  printf("[");
+  while(p != NULL) {
+    printf(FORMAT, p->val);
+    p = p->next;
+  }
+  printf("]\n");
+}
+
+
+// TODO: non-recursive print-reverse
+void deq_print_rev(DEQ *q) {
+  DNODE *p = q->back;
+  printf("[");
+  while(p != NULL) {
+    printf(FORMAT, p->val);
+    p = p->prev;
+  }
+  printf("]\n");
+}
+
+void deq_push_front(DEQ *l, ElemType val) {
+DNODE *p = malloc(sizeof(DNODE));
+
+  p->val = val;
+  p->next = l->front;
+  p->prev = NULL;
+  
+  l->front = p;
+  if(l->back == NULL)   // was empty, now one elem
+      l->back = p;
+  else{
+    p->next->prev = p;
+  }
+}
+
+/* TODO */
+void deq_push_back(DEQ *l, ElemType val) {
+  DNODE *p = malloc(sizeof(DNODE));
+
+  p->val = val;
+  p->next = NULL;
+  p->prev = l->back;
+  l->back = p;
+  if (l->front == NULL) {
+    l->front = p;
+  } else {
+    DNODE* temp = l->front;
+    while (temp->next != NULL) {
+      temp = temp->next;
+    }
+    temp->next = p;
+    p->prev = temp;
+  }
+}
+
+/* TODO */
+int deq_pop_front(DEQ *l, ElemType *val) {
+  if (l->front == NULL) {
+    return 0;
+  }
+  DNODE *p = l->front;
+  *val = p->val;
+  if(l->front == l->back) {
+    free(l->front);
+    l->front = NULL;
+    l->back = NULL;
+    return 1;
+  }
+  DNODE *q = p->next;
+  l->front = q;
+  q->prev = NULL;
+  free(p);
+  return 1;
+}
+
+/* TODO */
+int deq_pop_back(DEQ *q, ElemType *val) {
+  if (q->front == NULL) {
+    return 0;
+  }
+  DNODE *p = q->back;
+  *val = p->val;
+  if(q->front == q->back) {
+    free(q->front);
+    q->front = NULL;
+    q->back = NULL;
+    return 1;
+  }
+  DNODE *prev = p->prev;
+  q->back = prev;
+  prev->next = NULL;
+  free(p);
+  return 1;
+} 
+
+
+int deq_is_empty(DEQ *q) {
+  return q->front == NULL;
+}
+
+
+
+
+/* These are "sanity checker" functions that check to see
+*     list invariants hold or not.
+*/
+int deq_sanity1(DEQ *q) {
+  if(q->front == NULL && q->back != NULL){
+    fprintf(stderr, "lst_sanity1 error:  front NULL but back non-NULL\n");
+    return 0;
+  }
+  if(q->back == NULL && q->front != NULL){
+    fprintf(stderr, "lst_sanity1 error:  back NULL but front non-NULL\n");
+    return 0;
+  }
+  return 1;
+}
+
+int deq_sanity2(DEQ *q) {
+  if(q->back != NULL && q->back->next != NULL) {
+    fprintf(stderr, "lst_sanity2 error:  back elem has a non-NULL next?\n");
+    return 0;
+  }
+  return 1;
+}
+int deq_sanity3(DEQ *q) {
+  if(q->front!= NULL && q->front->prev != NULL) {
+    fprintf(stderr, "lst_sanity3 error:  front elem has a non-NULL prev?\n");
+    return 0;
+  }
+  return 1;
+}
+
+
+/*
+* function:  find_back()
+* description:  returns a pointer to the last
+*               node of the given list.
+*		Note that we are operating at
+*		the "node level".
+*
+*		if p is NULL, NULL is returned.
+*
+* purpose:  mostly for debugging -- enables sanity3
+*/
+static DNODE * find_back(DNODE *p) {
+
+  if(p ==  NULL)
+    return NULL;
+
+  while(p->next != NULL) {
+    p = p->next;
+  }
+  return p;
+}
+
+/*
+*   makes sure that the back pointer is also the last reachable
+*    node when you start walking from front.
+*    HINT:  use pointer comparison
+*/
+int deq_sanity4(DEQ *q) {
+DNODE *real_back;
+
+  real_back = find_back(q->front);
+
+  return (real_back == q->back);
+}
 
 
 
@@ -21,8 +238,12 @@
 */
 
 struct service_queue {
-    LIST * the_queue;
-    LIST * buzzer_bucket;
+    DEQ * the_queue;
+    DEQ * buzzer_bucket;
+    DNODE ** buzzer_id2pointer_map;
+    int total;
+    int capacity;
+    int queue_length;
 };
 
 /**
@@ -35,9 +256,12 @@ SQ *q;
 
   q = malloc(sizeof(SQ));
 
-  q->the_queue = lst_create();
-  q->buzzer_bucket = lst_create();
-
+  q->the_queue = deq_create();
+  q->queue_length = 0;
+  q->buzzer_bucket = deq_create();
+  q->buzzer_id2pointer_map = malloc(INITCAP*sizeof(DNODE *));
+  q->total = 0;
+  q->capacity = INITCAP;
   return q;
 }
 
@@ -57,9 +281,9 @@ SQ *q;
 */
 void sq_free(SQ *q) {
 
-  lst_free(q->the_queue);
-  lst_free(q->buzzer_bucket);
-
+  deq_free(q->the_queue);
+  deq_free(q->buzzer_bucket);
+  free(q->buzzer_id2pointer_map);
   free(q);
 }
 
@@ -73,7 +297,7 @@ void sq_free(SQ *q) {
 void sq_display(SQ *q) {
 
   printf("current-queue contents:\n    ");
-  lst_print(q->the_queue);
+  deq_print(q->the_queue);
   printf("\n");
 }
 
@@ -85,7 +309,7 @@ void sq_display(SQ *q) {
 * ACHIEVED RUNTIME:  ???
 */
 int  sq_length(SQ *q) {
-  return lst_length(q->the_queue);
+  return q->queue_length;
 }
 
 /**
@@ -107,9 +331,11 @@ int  sq_length(SQ *q) {
 int  sq_give_buzzer(SQ *q) {
   int buzzer;
 
-  if(!lst_is_empty(q->buzzer_bucket)) {
-    buzzer = lst_pop_front(q->buzzer_bucket);
-    lst_push_back(q->the_queue, buzzer);
+  if(!deq_is_empty(q->buzzer_bucket)) {
+    deq_pop_front(q->buzzer_bucket, &buzzer);
+    deq_push_back(q->the_queue, buzzer);
+    q->buzzer_id2pointer_map[buzzer] = q->the_queue->back;
+    q->queue_length++;
     return buzzer;
   }
   else {
@@ -122,7 +348,22 @@ int  sq_give_buzzer(SQ *q) {
         is N
         */
     buzzer = sq_length(q);
-    lst_push_back(q->the_queue, buzzer);
+    deq_push_back(q->the_queue, buzzer);
+    q->buzzer_id2pointer_map[buzzer] = q->the_queue->back;
+    q->queue_length++;
+    q->total++;
+    if (q->total > q->capacity-1) {
+      DNODE ** new_items;
+      int i;
+
+      q->capacity = 2 * q->capacity;
+      new_items = malloc(q->capacity * sizeof(DNODE *));
+      for(i=0; i<=q->total-1; i++) 
+        new_items[i]= q->buzzer_id2pointer_map[i];
+
+      free(q->buzzer_id2pointer_map);
+      q->buzzer_id2pointer_map= new_items;
+    }
     return buzzer;
   }
 }
@@ -137,11 +378,12 @@ int  sq_give_buzzer(SQ *q) {
 int sq_seat(SQ *q) {
 int buzzer;
 
-	if(lst_is_empty(q->the_queue))
+	if(deq_is_empty(q->the_queue))
 	  return -1;
 	else{
-	  buzzer = lst_pop_front(q->the_queue);
-	  lst_push_front(q->buzzer_bucket, buzzer);
+	  deq_pop_front(q->the_queue, &buzzer);
+	  deq_push_front(q->buzzer_bucket, buzzer);
+    q->queue_length--;
 	  return buzzer;
 	}
 } 
@@ -158,8 +400,14 @@ int buzzer;
 */
 int sq_kick_out(SQ *q, int buzzer) {
 
-  if(lst_remove_first(q->the_queue, buzzer)) {
-    lst_push_front(q->buzzer_bucket, buzzer);
+  if(q->buzzer_id2pointer_map[buzzer] != NULL) {
+    DNODE * prev = q->buzzer_id2pointer_map[buzzer]->prev;
+    DNODE * next = q->buzzer_id2pointer_map[buzzer]->next;
+    prev->next = next;
+    next->prev = prev;
+    q->buzzer_id2pointer_map[buzzer] = NULL;
+    q->queue_length--;
+    deq_push_front(q->buzzer_bucket, buzzer);
     return 1;
   }
   else
@@ -176,8 +424,12 @@ int sq_kick_out(SQ *q, int buzzer) {
 int sq_take_bribe(SQ *q, int buzzer) {
 
   /* remove buzzer then push it on front */
-  if(lst_remove_first(q->the_queue, buzzer)) {
-    lst_push_front(q->the_queue, buzzer);
+  if(q->buzzer_id2pointer_map[buzzer] != NULL) {
+    DNODE * prev = q->buzzer_id2pointer_map[buzzer]->prev;
+    DNODE * next = q->buzzer_id2pointer_map[buzzer]->next;
+    prev->next = next;
+    next->prev = prev;
+    deq_push_front(q->the_queue, buzzer);
     return 1;
   }
   else {
