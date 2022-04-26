@@ -408,7 +408,6 @@ int sq_kick_out(SQ *q, int buzzer) {
       deq_pop_back(q->the_queue, &buzzer);
       return 1;
     }
-    printf("Removing buzzer in the middle\n");
     p->next = NULL;
     p->prev = NULL;
     free(p);
@@ -447,9 +446,13 @@ int sq_take_bribe(SQ *q, int buzzer) {
       return 1;
     } else if (p == q->the_queue->back) {
       deq_pop_back(q->the_queue, &buzzer);
+      q->buzzer_id2pointer_map[buzzer] = NULL;
+      deq_push_front(q->the_queue, buzzer);
+      q->buzzer_id2pointer_map[buzzer] = q->the_queue->front;
+      return 1;
     }
-    q->buzzer_id2pointer_map[buzzer] = NULL;
     free(p);
+    q->buzzer_id2pointer_map[buzzer] = NULL;
     deq_push_front(q->the_queue, buzzer);
     q->buzzer_id2pointer_map[buzzer] = q->the_queue->front;
     return 1;
