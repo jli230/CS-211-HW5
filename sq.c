@@ -410,6 +410,7 @@ int sq_kick_out(SQ *q, int buzzer) {
     }
     prev->next = next;
     next->prev = prev;
+    free(p);
     return 1;
   }
   else {
