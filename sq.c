@@ -428,7 +428,7 @@ int sq_kick_out(SQ *q, int buzzer) {
 * ACHIEVED RUNTIME:  ???
 */
 int sq_take_bribe(SQ *q, int buzzer) {
-  if (buzzer > q->total) {
+  if (buzzer+1 > q->total) {
     return 0;
   }
   DNODE * p = q->buzzer_id2pointer_map[buzzer];
