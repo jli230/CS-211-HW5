@@ -408,6 +408,7 @@ int sq_kick_out(SQ *q, int buzzer) {
       deq_pop_back(q->the_queue, &buzzer);
       return 1;
     }
+    printf("Removing buzzer in the middle\n");
     p->next = NULL;
     p->prev = NULL;
     free(p);
@@ -428,6 +429,9 @@ int sq_kick_out(SQ *q, int buzzer) {
 * ACHIEVED RUNTIME:  ???
 */
 int sq_take_bribe(SQ *q, int buzzer) {
+  if (buzzer > q->total) {
+    return 0;
+  }
   DNODE * p = q->buzzer_id2pointer_map[buzzer];
   /* remove buzzer then push it on front */
   if(p != NULL) {
@@ -445,6 +449,7 @@ int sq_take_bribe(SQ *q, int buzzer) {
       deq_pop_back(q->the_queue, &buzzer);
     }
     q->buzzer_id2pointer_map[buzzer] = NULL;
+    free(p);
     deq_push_front(q->the_queue, buzzer);
     q->buzzer_id2pointer_map[buzzer] = q->the_queue->front;
     return 1;
