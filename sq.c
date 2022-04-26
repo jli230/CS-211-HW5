@@ -398,6 +398,7 @@ int sq_kick_out(SQ *q, int buzzer) {
   if(p != NULL) {
     DNODE * prev = p->prev;
     DNODE * next = p->next;
+    free(p);
     q->buzzer_id2pointer_map[buzzer] = NULL;
     q->queue_length--;
     deq_push_front(q->buzzer_bucket, buzzer);
@@ -410,7 +411,6 @@ int sq_kick_out(SQ *q, int buzzer) {
     }
     prev->next = next;
     next->prev = prev;
-    free(p);
     return 1;
   }
   else {
